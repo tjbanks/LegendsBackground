@@ -28,6 +28,7 @@ public class TiledWallpaperService extends WallpaperService {
                 drawFrame();
             }
         };
+        private long lastFrameTime;
 
         @Override
         public void onCreate(SurfaceHolder surfaceHolder) {
@@ -41,6 +42,7 @@ public class TiledWallpaperService extends WallpaperService {
         public void onVisibilityChanged(boolean visible) {
             this.visible = visible;
             if (visible) {
+                lastFrameTime = System.currentTimeMillis();
                 drawFrame();
             } else {
                 handler.removeCallbacks(drawRunnable);
@@ -56,18 +58,27 @@ public class TiledWallpaperService extends WallpaperService {
                     int width = bitmap.getWidth();
                     int height = bitmap.getHeight();
                     canvas.drawColor(0xFF000000);  // Clear background
-                    for (int y = (int) offsetY - height; y < canvas.getHeight(); y += height) {
-                        for (int x = (int) offsetX - width; x < canvas.getWidth(); x += width) {
-                            canvas.drawBitmap(bitmap, x, y, paint);
-                        }
-                    }
-                    offsetX += (float) 3.5; // Speed of horizontal movement
-                    offsetY += (float) 3.5; // Speed of vertical movement
+
+                    // Calculate time elapsed
+                    long currentTime = System.currentTimeMillis();
+                    float deltaTime = (currentTime - lastFrameTime) / 1000.0f;
+                    lastFrameTime = currentTime;
+
+                    // Update offsets
+                    float speed = 150.0f;  // Speed in pixels per second
+                    offsetX += speed * deltaTime;
+                    offsetY += speed * deltaTime;
                     if (offsetX >= width) {
                         offsetX = 0;
                     }
                     if (offsetY >= height) {
                         offsetY = 0;
+                    }
+
+                    for (int y = (int) offsetY - height; y < canvas.getHeight(); y += height) {
+                        for (int x = (int) offsetX - width; x < canvas.getWidth(); x += width) {
+                            canvas.drawBitmap(bitmap, x, y, paint);
+                        }
                     }
                 }
             } finally {
@@ -77,7 +88,7 @@ public class TiledWallpaperService extends WallpaperService {
             }
             handler.removeCallbacks(drawRunnable);
             if (visible) {
-                handler.postDelayed(drawRunnable, 1000 / 60); // Adjust for frame rate
+                handler.postDelayed(drawRunnable, 16);  // Approx. 60 fps
             }
         }
     }
